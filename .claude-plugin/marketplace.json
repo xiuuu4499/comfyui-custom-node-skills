@@ -10,7 +10,7 @@
     {
       "name": "comfyui-custom-nodes",
       "source": "./plugins/comfyui-custom-nodes",
-      "description": "9 skills covering ComfyUI custom node development with the V3 and V1 APIs"
+      "description": "10 skills covering ComfyUI custom node development with the V3 and V1 APIs"
     }
   ]
 }

@@ -17,23 +17,45 @@
 | **comfyui-node-frontend** | UI 功能、自定义控件、扩展 | JS 生命周期钩子、侧边栏、命令、设置、Toast、对话框、右键菜单 |
 | **comfyui-node-migration** | 将 V1 节点迁移到 V3 | 属性映射、方法转换、注册方式变更 |
 | **comfyui-node-packaging** | 项目搭建、发布 | 目录结构、`__init__.py`、`pyproject.toml`、`WEB_DIRECTORY`、Registry 发布 |
+| **comfyui-node-testing** | 编写/运行/调试测试、测试运行器问题 | pytest 隔离、conftest 模拟、单元与集成测试分离 |
 
 ## 安装
 
-### 插件市场（推荐）
+### 插件市场 (推荐)
 
-在 Claude Code 中打开市场，添加本仓库 URL，即可安装 `comfyui-custom-nodes` 插件，全部 9 个 Skills 将自动可用，无需手动复制。
+在 Claude Code 中打开市场，添加本仓库 URL，即可安装 `comfyui-custom-nodes` 插件，全部 10 个 Skills 将自动可用，无需手动配置或复制。
 
-### 个人级别（所有项目生效）
+### Skills CLI (替代方案)
 
+你可以使用 `skills` 工具直接安装全部或指定的 skills。
+
+**安装全部 10 个 skills 到当前项目:**
+```bash
+npx skills@latest add jtydhr88/comfyui-custom-node-skills --all
+```
+
+**全局安装全部 10 个 skills (所有项目可用):**
+```bash
+npx skills@latest add jtydhr88/comfyui-custom-node-skills --all -g
+```
+
+**仅安装指定的 skill (例如 testing):**
+```bash
+npx skills@latest add jtydhr88/comfyui-custom-node-skills --skill comfyui-node-testing
+```
+
+### 手动安装 (备用)
+
+如果你更喜欢手动安装：
+
+**个人级别 (所有项目生效):**
 ```bash
 # 克隆仓库，然后将 Skills 复制到个人 skills 目录
 git clone https://github.com/jtydhr88/comfyui-custom-node-skills.git
 cp -r comfyui-custom-node-skills/plugins/comfyui-custom-nodes/skills/comfyui-node-* ~/.claude/skills/
 ```
 
-### 项目级别
-
+**项目级别:**
 ```bash
 # 复制到你的 ComfyUI 自定义节点项目中
 cp -r comfyui-custom-node-skills/plugins/comfyui-custom-nodes/skills/comfyui-node-* /path/to/your-project/.claude/skills/

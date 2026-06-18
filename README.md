@@ -17,23 +17,45 @@ A curated collection of [Claude Code skills](https://docs.anthropic.com/en/docs/
 | **comfyui-node-frontend** | UI features, custom widgets, extensions | JS hooks, sidebar tabs, commands, settings, toasts, dialogs, context menus |
 | **comfyui-node-migration** | Converting V1 nodes to V3 | Property mapping, method conversion, registration changes |
 | **comfyui-node-packaging** | Project setup, publishing | Directory layout, `__init__.py`, `pyproject.toml`, `WEB_DIRECTORY`, registry publishing |
+| **comfyui-node-testing** | Writing/running/debugging tests, runner issues | pytest isolation, conftest mocking, unit vs integration separation |
 
 ## Installation
 
-### Plugin Marketplace (recommended)
+### Plugin Marketplace (Recommended)
 
-In Claude Code, open the marketplace and add this repository URL. This installs the `comfyui-custom-nodes` plugin, which exposes all 9 skills automatically — no manual copying required.
+In Claude Code, open the marketplace and add this repository URL. This installs the `comfyui-custom-nodes` plugin, which exposes all 10 skills automatically — no manual configuration or copying required.
 
-### Personal (all projects)
+### Skills CLI (Alternative)
 
+You can install all or specific skills directly using the `skills` tool.
+
+**Install all 10 skills to the current project:**
+```bash
+npx skills@latest add jtydhr88/comfyui-custom-node-skills --all
+```
+
+**Install all 10 skills globally (available across all projects):**
+```bash
+npx skills@latest add jtydhr88/comfyui-custom-node-skills --all -g
+```
+
+**Install only a specific skill (e.g. testing):**
+```bash
+npx skills@latest add jtydhr88/comfyui-custom-node-skills --skill comfyui-node-testing
+```
+
+### Manual Installation (Alternative)
+
+If you prefer to install manually:
+
+**Personal (all projects):**
 ```bash
 # Clone the repository, then copy the skills to your personal skills directory
 git clone https://github.com/jtydhr88/comfyui-custom-node-skills.git
 cp -r comfyui-custom-node-skills/plugins/comfyui-custom-nodes/skills/comfyui-node-* ~/.claude/skills/
 ```
 
-### Project-specific
-
+**Project-specific:**
 ```bash
 # Copy skills into your ComfyUI custom node project
 cp -r comfyui-custom-node-skills/plugins/comfyui-custom-nodes/skills/comfyui-node-* /path/to/your-project/.claude/skills/
