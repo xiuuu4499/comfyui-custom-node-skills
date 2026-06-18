@@ -121,7 +121,9 @@ def main():
     # Isolate to tests/ so the local pytest.ini wins over ComfyUI's root config
     os.chdir(TESTS_DIR)
 
-    pytest_args = [PYTHON_EXE, "-m", "pytest", "."] + args
+    # Filter out --all if present, as it is a runner-specific flag to run all tests
+    # (which pytest does by default when no specific path/marker is given)
+    pytest_args = [PYTHON_EXE, "-m", "pytest"] + [a for a in args if a != "--all"]
     print(f"\n📋 Executing: {' '.join(pytest_args)}")
 
     try:
