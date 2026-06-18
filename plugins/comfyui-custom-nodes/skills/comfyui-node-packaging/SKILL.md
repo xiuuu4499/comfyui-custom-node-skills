@@ -1,6 +1,6 @@
 ---
 name: comfyui-node-packaging
-description: ComfyUI custom node project structure - directory layout, __init__.py, registration, requirements.txt, publishing, WEB_DIRECTORY. Use when setting up a new custom node project, packaging nodes, or publishing to the registry.
+description: comfyui-node-packaging: custom node project structure, requirements, and publishing. Use when the user wants to set up a new custom node project, package nodes, or publish to the registry.
 ---
 
 # ComfyUI Custom Node Packaging
@@ -53,26 +53,7 @@ async def comfy_entrypoint() -> MyNodesExtension:
     return MyNodesExtension()
 ```
 
-### V1 Registration (Legacy)
-
-```python
-# __init__.py
-from .nodes import MyNode1, MyNode2
-
-NODE_CLASS_MAPPINGS = {
-    "MyNode1": MyNode1,
-    "MyNode2": MyNode2,
-}
-
-NODE_DISPLAY_NAME_MAPPINGS = {
-    "MyNode1": "My Node 1",
-    "MyNode2": "My Node 2",
-}
-
-WEB_DIRECTORY = "./js"
-
-__all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS", "WEB_DIRECTORY"]
-```
+For legacy V1 registration details, see [comfyui-node-migration](../comfyui-node-migration/SKILL.md).
 
 ## Node Definitions File
 

@@ -1,6 +1,6 @@
 ---
 name: comfyui-node-migration
-description: ComfyUI V1 to V3 node migration - converting legacy nodes to the V3 API. Use when migrating existing custom nodes from V1 to V3, understanding differences between API versions, or modernizing node code.
+description: comfyui-node-migration: migrating legacy V1 nodes to modern V3 API. Use when the user wants to migrate existing legacy custom nodes to the modern V3 API or understand V1 vs V3 differences.
 ---
 
 # ComfyUI V1 → V3 Migration Guide
@@ -363,6 +363,137 @@ class V3SaveNode(io.ComfyNode):
     def execute(cls, images, prefix):
         saved = ui.ImageSaveHelper.get_save_images_ui(images, prefix, cls=cls)
         return io.NodeOutput(ui=saved)
+```
+
+## Legacy V1 Reference Guide
+
+This section consolidates reference formats and code patterns for legacy V1 nodes, which are useful for understanding how older custom nodes were structured before migrating them to V3.
+
+### V1 Node Class Structure
+```python
+class MyNodeV1:
+    CATEGORY = "my_category"
+    FUNCTION = "execute"
+    RETURN_TYPES = ("IMAGE",)
+    RETURN_NAMES = ("image",)
+
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "image": ("IMAGE",),
+                "strength": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 1.0}),
+            }
+        }
+
+    def execute(self, image, strength):
+        return (image * strength,)
+
+NODE_CLASS_MAPPINGS = {"MyNodeV1": MyNodeV1}
+NODE_DISPLAY_NAME_MAPPINGS = {"MyNodeV1": "My Node V1"}
+```
+
+### V1 Input Configuration (`INPUT_TYPES`)
+```python
+@classmethod
+def INPUT_TYPES(s):
+    return {
+        "required": {
+            "image": ("IMAGE",),
+            "strength": ("FLOAT", {
+                "default": 1.0, "min": 0.0, "max": 10.0, "step": 0.01
+            }),
+            "mode": (["option_a", "option_b"],),
+            "text": ("STRING", {"multiline": True, "default": ""}),
+        },
+        "optional": {
+            "mask": ("MASK",),
+        },
+        "hidden": {
+            "unique_id": "UNIQUE_ID",
+            "prompt": "PROMPT",
+            "extra_pnginfo": "EXTRA_PNGINFO",
+        },
+    }
+```
+
+### V1 Output & Preview Patterns
+```python
+# Output Node (Saves/Previews only)
+class V1SaveNode:
+    RETURN_TYPES = ()
+    OUTPUT_NODE = True
+    FUNCTION = "save"
+
+    def save(self, images, prefix):
+        # ... save logic ...
+        return {
+            "ui": {
+                "images": [
+                    {"filename": "out.png", "subfolder": "", "type": "output"}
+                ]
+            }
+        }
+
+# Data + UI Preview output node
+class V1PreviewAndOutput:
+    RETURN_TYPES = ("IMAGE",)
+    OUTPUT_NODE = True
+    FUNCTION = "run"
+
+    def run(self, image):
+        # ... preview logic ...
+        return {
+            "ui": {"images": [...]},
+            "result": (processed_image,),
+        }
+```
+
+### V1 Registration (`__init__.py`)
+```python
+from .nodes import MyNode1, MyNode2
+
+NODE_CLASS_MAPPINGS = {
+    "MyNode1": MyNode1,
+    "MyNode2": MyNode2,
+}
+
+NODE_DISPLAY_NAME_MAPPINGS = {
+    "MyNode1": "My Node 1",
+    "MyNode2": "My Node 2",
+}
+
+WEB_DIRECTORY = "./js"
+
+__all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS", "WEB_DIRECTORY"]
+```
+
+### V1 Execution Lifecycle Features
+
+#### Caching (`IS_CHANGED`)
+```python
+@classmethod
+def IS_CHANGED(s, min_val, max_val):
+    return time.time()  # return value compared to previous run; changing triggers execution
+```
+
+#### Input Validation (`VALIDATE_INPUTS`)
+```python
+@classmethod
+def VALIDATE_INPUTS(s, width, height):
+    if width % 8 != 0:
+        return "Width must be a multiple of 8"
+    return True
+```
+
+#### List Processing (`INPUT_IS_LIST` / `OUTPUT_IS_LIST`)
+```python
+# Receive lists instead of individual items:
+class ListNode:
+    INPUT_IS_LIST = True
+
+# Output lists:
+OUTPUT_IS_LIST = (True,)  # tuple matching RETURN_TYPES
 ```
 
 ## Key Gotchas

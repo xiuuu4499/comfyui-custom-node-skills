@@ -1,6 +1,6 @@
 ---
 name: comfyui-node-inputs
-description: ComfyUI node input types - INT, FLOAT, STRING, BOOLEAN, COMBO widgets, hidden inputs, optional inputs, lazy inputs, force_input. Use when configuring node inputs, adding widgets, or customizing input behavior.
+description: comfyui-node-inputs: V3 input configuration (widgets, hidden inputs, lazy inputs, options). Use when the user wants to configure node inputs, add widgets, or customize input behavior.
 ---
 
 # ComfyUI Node Inputs
@@ -311,30 +311,7 @@ class ConditionalNode(io.ComfyNode):
 - Return list of input names that need computing, or empty list
 - Method may be called multiple times
 
-## V1 Input Format (Legacy Reference)
-
-```python
-@classmethod
-def INPUT_TYPES(s):
-    return {
-        "required": {
-            "image": ("IMAGE",),
-            "strength": ("FLOAT", {
-                "default": 1.0, "min": 0.0, "max": 10.0, "step": 0.01
-            }),
-            "mode": (["option_a", "option_b"],),
-            "text": ("STRING", {"multiline": True, "default": ""}),
-        },
-        "optional": {
-            "mask": ("MASK",),
-        },
-        "hidden": {
-            "unique_id": "UNIQUE_ID",
-            "prompt": "PROMPT",
-            "extra_pnginfo": "EXTRA_PNGINFO",
-        },
-    }
-```
+For legacy V1 input format details, see [comfyui-node-migration](../comfyui-node-migration/SKILL.md).
 
 ## Complete Example: Multi-Input Node
 

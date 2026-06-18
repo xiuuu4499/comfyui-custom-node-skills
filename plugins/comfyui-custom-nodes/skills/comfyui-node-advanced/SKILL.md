@@ -1,6 +1,6 @@
 ---
 name: comfyui-node-advanced
-description: ComfyUI advanced node patterns - MatchType, Autogrow, DynamicCombo, node expansion, MultiType, wildcard inputs. Use when building complex nodes with dynamic inputs, type matching, or node expansion.
+description: comfyui-node-advanced: advanced V3 input patterns (MatchType, Autogrow, DynamicCombo, expansion). Use when the user wants to build complex nodes with dynamic inputs, type matching, or node expansion.
 ---
 
 # ComfyUI Advanced Node Patterns (V3)
@@ -188,47 +188,7 @@ io.DynamicCombo.Input("outer", options=[
 
 ## Node Expansion - Subgraph Injection
 
-Nodes can return a subgraph that replaces themselves during execution:
-
-```python
-from comfy_execution.graph_utils import GraphBuilder
-
-class RepeatNode(io.ComfyNode):
-    @classmethod
-    def define_schema(cls):
-        return io.Schema(
-            node_id="RepeatNode",
-            display_name="Repeat KSampler",
-            category="sampling",
-            enable_expand=True,
-            inputs=[
-                io.Model.Input("model"),
-                io.Int.Input("repeat_count", default=2, min=1, max=10),
-                io.Latent.Input("latent"),
-            ],
-            outputs=[io.Latent.Output("LATENT")],
-        )
-
-    @classmethod
-    def execute(cls, model, repeat_count, latent):
-        graph = GraphBuilder()
-        current_latent = latent
-        for i in range(repeat_count):
-            sampler = graph.node("KSampler",
-                model=model,
-                latent_image=current_latent,
-                # ... other params
-            )
-            current_latent = sampler.out(0)
-        return io.NodeOutput(current_latent, expand=graph.finalize())
-```
-
-**Key rules for node expansion**:
-- Set `enable_expand=True` in Schema
-- Use `GraphBuilder` to construct subgraphs safely
-- Return `io.NodeOutput(output_ref, expand=graph.finalize())`
-- Node IDs in subgraph must be deterministic and unique
-- Each subnode is cached separately
+Nodes can return a dynamically constructed subgraph that replaces themselves during execution. For details and code examples, see [Node Expansion](expansion.md).
 
 ## Accept All Inputs
 
@@ -335,67 +295,9 @@ class SlowNode(io.ComfyNode):
         return io.NodeOutput("done")
 ```
 
-## NodeReplace - Migration Between Nodes
+## Node Replacement & ComfyAPI
 
-Register replacements so old workflows auto-migrate to new nodes:
-
-```python
-from typing_extensions import override
-from comfy_api.latest import ComfyAPI, ComfyExtension, io
-
-class MyExtension(ComfyExtension):
-    @override
-    async def on_load(self):
-        api = ComfyAPI()
-        await api.node_replacement.register(io.NodeReplace(
-            new_node_id="MyNewNode_v2",
-            old_node_id="MyOldNode",
-            old_widget_ids=["width", "height", "mode"],  # positional widget order
-            input_mapping=[
-                {"new_id": "image_in", "old_id": "image"},     # rename input
-                {"new_id": "size", "set_value": 512},           # set fixed value
-            ],
-            output_mapping=[
-                {"new_idx": 0, "old_idx": 0},       # index-based, not name-based
-            ],
-        ))
-
-    @override
-    async def get_node_list(self):
-        return [MyNewNodeV2]
-```
-
-**InputMap types**:
-- `InputMapOldId`: `{"new_id": str, "old_id": str}` — map old input to new
-- `InputMapSetValue`: `{"new_id": str, "set_value": Any}` — set fixed value on new
-- Dot notation for autogrow inputs: `{"new_id": "images.image0", "old_id": "image1"}`
-
-**OutputMap** (index-based, not name-based):
-- `{"new_idx": int, "old_idx": int}` — map old output index to new
-
-**old_widget_ids**: Required because workflow JSON stores widget values by position, not by ID. This list maps positional indexes to input IDs for correct migration.
-
-## ComfyAPI - Runtime API
-
-```python
-from comfy_api.latest import ComfyAPI, ComfyAPISync
-
-# In sync execute(): use ComfyAPISync (no await)
-api = ComfyAPISync()
-api.execution.set_progress(value=50, max_value=100)
-api.execution.set_progress(
-    value=50, max_value=100,
-    node_id=None,                   # optional: defaults to current node
-    preview_image=pil_image,        # PIL Image or ImageInput tensor
-    ignore_size_limit=False,
-)
-
-# In async execute(): use ComfyAPI (with await)
-api = ComfyAPI()
-await api.execution.set_progress(value=50, max_value=100)
-
-# Node replacement registration (in async on_load)
-await api.node_replacement.register(io.NodeReplace(...))
+For details on node migration replacement mapping (`NodeReplace`) and how to run runtime progress reports/caching operations (`ComfyAPI` / `ComfyAPISync`), see [Node replacement & Runtime ComfyAPI](node-replace.md).
 ```
 
 ## See Also

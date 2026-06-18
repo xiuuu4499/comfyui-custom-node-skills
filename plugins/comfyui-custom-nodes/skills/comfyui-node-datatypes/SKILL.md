@@ -1,6 +1,6 @@
 ---
 name: comfyui-node-datatypes
-description: ComfyUI data types - IMAGE, LATENT, MASK, CONDITIONING, MODEL, CLIP, VAE, AUDIO, VIDEO, 3D types, widget types, and custom types. Use when working with ComfyUI tensors, model types, or defining input/output data types.
+description: comfyui-node-datatypes: input/output data types (IMAGE, LATENT, MASK, model types, widgets). Use when the user wants to work with ComfyUI tensors, model types, or define input/output data types.
 ---
 
 # ComfyUI Data Types
@@ -57,38 +57,11 @@ ComfyUI uses specific data types for node inputs and outputs. Understanding tens
 
 ### 3D Types
 
-| Type | V3 Class | Python Type | Description |
-|---|---|---|---|
-| MESH | `io.Mesh` | `MESH(vertices, faces)` | 3D mesh with vertices + faces tensors |
-| VOXEL | `io.Voxel` | `VOXEL(data)` | Voxel data tensor |
-| FILE_3D | `io.File3DAny` | `File3D` | Any supported 3D format |
-| FILE_3D_GLB | `io.File3DGLB` | `File3D` | Binary glTF |
-| FILE_3D_GLTF | `io.File3DGLTF` | `File3D` | JSON-based glTF |
-| FILE_3D_FBX | `io.File3DFBX` | `File3D` | FBX format |
-| FILE_3D_OBJ | `io.File3DOBJ` | `File3D` | OBJ format |
-| FILE_3D_STL | `io.File3DSTL` | `File3D` | STL format (3D printing) |
-| FILE_3D_USDZ | `io.File3DUSDZ` | `File3D` | Apple AR format |
-| SVG | `io.SVG` | `SVG` | Scalable vector graphics |
-| LOAD_3D | `io.Load3D` | `{"image": str, "mask": str, "normal": str, "camera_info": CameraInfo}` | 3D model with renders |
-| LOAD_3D_ANIMATION | `io.Load3DAnimation` | Same as Load3D | Animated 3D model |
-| LOAD3D_CAMERA | `io.Load3DCamera` | `{"position": dict, "target": dict, "zoom": int, "cameraType": str}` | 3D camera info |
+For details on 3D data formats (MESH, VOXEL, File3D, etc.), see [3D Data Types](3d-types.md).
 
 ### Widget Types (create UI controls)
 
-| Type | V3 Class | Python Type | Description |
-|---|---|---|---|
-| INT | `io.Int` | `int` | Integer with min/max/step |
-| FLOAT | `io.Float` | `float` | Float with min/max/step/round |
-| STRING | `io.String` | `str` | Text (single/multi-line) |
-| BOOLEAN | `io.Boolean` | `bool` | Toggle with labels |
-| COMBO | `io.Combo` | `str` | Dropdown selection |
-| COMBO (multi) | `io.MultiCombo` | `list[str]` | Multi-select dropdown |
-| COLOR | `io.Color` | `str` (hex) | Color picker, default `#ffffff` |
-| BOUNDING_BOX | `io.BoundingBox` | `{"x": int, "y": int, "width": int, "height": int}` | Rectangle region |
-| CURVE | `io.Curve` | `list[tuple[float, float]]` | Spline curve points |
-| IMAGECOMPARE | `io.ImageCompare` | `dict` | Image comparison widget |
-| WEBCAM | `io.Webcam` | `str` | Webcam capture widget |
-| HISTOGRAM | `io.Histogram` | `list[int]` | Histogram bin counts |
+For details on interactive input controls (INT, FLOAT, STRING, COLOR, etc.), see [Widget Data Types](widgets.md).
 
 ### Special Types
 
@@ -247,86 +220,7 @@ class VideoInput(ABC):
 
 Concrete implementations: `VideoFromFile`, `VideoFromComponents` (available via `from comfy_api.latest import InputImpl`).
 
-## 3D Types
 
-### File3D
-
-```python
-from comfy_api.latest import Types
-
-# File3D wraps a 3D file (disk path or BytesIO stream)
-file_3d = Types.File3D(source="/path/to/model.glb", file_format="glb")
-file_3d.format              # "glb"
-file_3d.is_disk_backed      # True
-file_3d.get_data()          # BytesIO
-file_3d.get_bytes()         # raw bytes
-file_3d.save_to("/output/model.glb")
-```
-
-### MESH and VOXEL
-
-```python
-from comfy_api.latest import Types
-
-mesh = Types.MESH(vertices=torch.tensor(...), faces=torch.tensor(...))
-voxel = Types.VOXEL(data=torch.tensor(...))
-```
-
-## Widget Types with Special Features
-
-### Color
-
-```python
-io.Color.Input("color", default="#ff0000", socketless=True)
-# Value is a hex string like "#ff0000"
-```
-
-### BoundingBox
-
-```python
-io.BoundingBox.Input("bbox",
-    default={"x": 0, "y": 0, "width": 512, "height": 512},
-    socketless=True,
-    component="my_component",  # optional custom UI component
-)
-# Value is {"x": int, "y": int, "width": int, "height": int}
-```
-
-### Curve
-
-```python
-io.Curve.Input("curve",
-    default=[(0.0, 0.0), (1.0, 1.0)],  # linear
-    socketless=True,
-)
-# Value is list of (x, y) tuples
-```
-
-### MultiCombo
-
-```python
-io.MultiCombo.Input("tags",
-    options=["tag1", "tag2", "tag3"],
-    default=["tag1"],
-    placeholder="Select tags...",
-    chip=True,  # show as chips
-)
-# Value is list[str]
-```
-
-### Webcam
-
-```python
-io.Webcam.Input("webcam_capture")
-# Value is str (captured image data)
-```
-
-### ImageCompare
-
-```python
-io.ImageCompare.Input("comparison", socketless=True)
-# Value is dict
-```
 
 ## Custom Types
 

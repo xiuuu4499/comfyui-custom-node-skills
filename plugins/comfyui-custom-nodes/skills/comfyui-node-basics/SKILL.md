@@ -1,6 +1,6 @@
 ---
 name: comfyui-node-basics
-description: ComfyUI custom node fundamentals - V3 node structure, Schema, inputs/outputs, registration. Use when creating new ComfyUI custom nodes, defining node classes, or setting up a custom node project.
+description: comfyui-node-basics: V3 API fundamentals, node schema, and registration. Use when the user wants to create a new ComfyUI custom node, define a node class, or set up a custom node project.
 ---
 
 # ComfyUI Custom Node Basics (V3 API)
@@ -132,45 +132,7 @@ async def comfy_entrypoint() -> MyExtension:
 
 The `comfy_entrypoint()` function must be defined at the module level (in the file directly imported by ComfyUI).
 
-## V1 Node Structure (Legacy Reference)
-
-V1 nodes use class attributes and `NODE_CLASS_MAPPINGS`:
-
-```python
-class MyNodeV1:
-    CATEGORY = "my_category"
-    FUNCTION = "execute"
-    RETURN_TYPES = ("IMAGE",)
-    RETURN_NAMES = ("image",)
-
-    @classmethod
-    def INPUT_TYPES(s):
-        return {
-            "required": {
-                "image": ("IMAGE",),
-                "strength": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 1.0}),
-            }
-        }
-
-    def execute(self, image, strength):
-        return (image * strength,)
-
-NODE_CLASS_MAPPINGS = {"MyNodeV1": MyNodeV1}
-NODE_DISPLAY_NAME_MAPPINGS = {"MyNodeV1": "My Node V1"}
-```
-
-## Key Differences: V3 vs V1
-
-| Aspect | V3 | V1 |
-|---|---|---|
-| Base class | `io.ComfyNode` | Plain class |
-| Execute method | `execute` classmethod (fixed name) | Instance method (custom name via `FUNCTION`) |
-| Inputs | `io.Schema(inputs=[...])` | `INPUT_TYPES()` dict |
-| Outputs | `io.Schema(outputs=[...])` | `RETURN_TYPES` tuple |
-| Return value | `io.NodeOutput(...)` | Plain tuple |
-| Registration | `ComfyExtension` + `comfy_entrypoint()` | `NODE_CLASS_MAPPINGS` dict |
-| State | No instance state (classmethods) | Instance state allowed |
-| Hidden inputs | `cls.hidden.prompt`, etc. | kwargs from `"hidden"` dict |
+For legacy V1 API comparison and migration details, see [comfyui-node-migration](../comfyui-node-migration/SKILL.md).
 
 ## Important Rules
 
