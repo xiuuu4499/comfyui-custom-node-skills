@@ -96,6 +96,9 @@ def test_node_registered(api_client):
 | `ImportError: attempted relative import` | `pytest` run directly from package root | Use `run_tests.py` wrapper — it sets the correct `sys.path` |
 | `TypeError` on `class MyNode(io.ComfyNode)` | `io.ComfyNode` mocked as MagicMock, not a real type | Use `type("ComfyNode", (object,), {})` in conftest structural mock |
 | `AttributeError` on mocked module | Test calls a method the MagicMock doesn't spec | Add the attribute to the mock or use a targeted fixture |
+| `Integration tests hang / timeout` | Subprocess stdout buffer filled up (`subprocess.PIPE` without consumption) | Redirect subprocess output to a file (e.g. `tests/comfyui_server.log`) or `DEVNULL` |
+| `Nodes not registered in server subprocess` | Subprocess inherits testing-bypass environment flags (`COMFYUI_TESTING=1`) | Strip test-specific environment flags from the environment dict passed to the subprocess |
+| `Manual scripts pollute pytest run / crash` | Helper/debug scripts match `test_*.py` and are scanned by pytest | Relocate helper scripts to `tests/diagnostics/` or rename them to not match the `test_` prefix |
 
 ## See Also
 

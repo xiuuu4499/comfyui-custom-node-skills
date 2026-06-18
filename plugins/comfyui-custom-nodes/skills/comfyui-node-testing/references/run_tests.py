@@ -39,6 +39,7 @@ else:
     PYTHON_EXE = os.path.join(COMFYUI_ROOT, "venv", "bin", "python")
 
 _server_process = None
+_server_log = None
 
 
 # ---------------------------------------------------------------------------
@@ -60,19 +61,28 @@ def is_server_running(host="127.0.0.1", port=8188):
 
 def start_comfyui_server():
     """Background a managed ComfyUI instance for integration tests."""
-    global _server_process
+    global _server_process, _server_log
     if is_server_running():
         print("✓ ComfyUI server already running on port 8188")
         return None
 
     print("🚀 Starting ComfyUI server...")
     creation_flags = subprocess.CREATE_NEW_PROCESS_GROUP if sys.platform == "win32" else 0
+    
+    log_path = os.path.join(TESTS_DIR, "comfyui_server.log")
+    _server_log = open(log_path, "w", encoding="utf-8", errors="replace")
+
+    server_env = os.environ.copy()
+    server_env.pop("COMFYUI_TESTING", None)
+    server_env.pop("PYTEST_CURRENT_TEST", None)
+
     _server_process = subprocess.Popen(
         [PYTHON_EXE, COMFYUI_MAIN, "--listen", "127.0.0.1", "--port", "8188"],
         cwd=COMFYUI_ROOT,
-        stdout=subprocess.PIPE,
+        stdout=_server_log,
         stderr=subprocess.STDOUT,
         creationflags=creation_flags,
+        env=server_env,
     )
     atexit.register(stop_comfyui_server)
 
@@ -91,7 +101,7 @@ def start_comfyui_server():
 
 def stop_comfyui_server():
     """Gracefully terminate the backgrounded server."""
-    global _server_process
+    global _server_process, _server_log
     if _server_process is None:
         return
     print("\n🛑 Stopping ComfyUI server...")
@@ -104,6 +114,10 @@ def stop_comfyui_server():
             _server_process.terminate()
     _server_process.wait(timeout=10)
     _server_process = None
+
+    if _server_log is not None:
+        _server_log.close()
+        _server_log = None
 
 
 # ---------------------------------------------------------------------------
