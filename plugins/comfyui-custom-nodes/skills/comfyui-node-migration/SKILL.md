@@ -1,6 +1,6 @@
 ---
 name: comfyui-node-migration
-description: comfyui-node-migration: migrating legacy V1 nodes to modern V3 API. Use when the user wants to migrate existing legacy custom nodes to the modern V3 API or understand V1 vs V3 differences.
+description: Use when migrating legacy ComfyUI V1 custom nodes to the modern V3 API.
 ---
 
 # ComfyUI V1 → V3 Migration Guide

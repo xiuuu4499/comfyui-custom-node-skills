@@ -1,6 +1,6 @@
 ---
 name: comfyui-node-datatypes
-description: comfyui-node-datatypes: input/output data types (IMAGE, LATENT, MASK, model types, widgets). Use when the user wants to work with ComfyUI tensors, model types, or define input/output data types.
+description: Use when defining ComfyUI data types, handling image/mask tensors, latents, or 3D models.
 ---
 
 # ComfyUI Data Types
@@ -61,7 +61,7 @@ For details on 3D data formats (MESH, VOXEL, File3D, etc.), see [3D Data Types](
 
 ### Widget Types (create UI controls)
 
-For details on interactive input controls (INT, FLOAT, STRING, COLOR, etc.), see [Widget Data Types](widgets.md).
+For details on interactive input controls (INT, FLOAT, STRING, COLOR, etc.), see [Widget Input Types](../comfyui-node-inputs/SKILL.md#widget-input-types).
 
 ### Special Types
 

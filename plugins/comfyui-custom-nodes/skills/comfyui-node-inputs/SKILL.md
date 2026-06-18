@@ -1,6 +1,6 @@
 ---
 name: comfyui-node-inputs
-description: comfyui-node-inputs: V3 input configuration (widgets, hidden inputs, lazy inputs, options). Use when the user wants to configure node inputs, add widgets, or customize input behavior.
+description: Use when configuring ComfyUI node inputs, widgets, hidden settings, or lazy evaluation.
 ---
 
 # ComfyUI Node Inputs

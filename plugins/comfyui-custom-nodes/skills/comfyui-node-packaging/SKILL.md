@@ -1,6 +1,6 @@
 ---
 name: comfyui-node-packaging
-description: comfyui-node-packaging: custom node project structure, requirements, and publishing. Use when the user wants to set up a new custom node project, package nodes, or publish to the registry.
+description: Use when packaging, setting requirements, structure, or publishing ComfyUI custom nodes.
 ---
 
 # ComfyUI Custom Node Packaging

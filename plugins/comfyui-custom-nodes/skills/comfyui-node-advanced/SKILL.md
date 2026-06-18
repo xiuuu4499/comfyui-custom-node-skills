@@ -1,6 +1,6 @@
 ---
 name: comfyui-node-advanced
-description: comfyui-node-advanced: advanced V3 input patterns (MatchType, Autogrow, DynamicCombo, expansion). Use when the user wants to build complex nodes with dynamic inputs, type matching, or node expansion.
+description: Use when building advanced ComfyUI inputs (MatchType, Autogrow, DynamicCombo) or performing node expansion subgraphs.
 ---
 
 # ComfyUI Advanced Node Patterns (V3)

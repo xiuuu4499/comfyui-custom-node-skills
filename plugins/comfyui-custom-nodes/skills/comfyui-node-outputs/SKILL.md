@@ -1,6 +1,6 @@
 ---
 name: comfyui-node-outputs
-description: comfyui-node-outputs: V3 output types (NodeOutput, UI previews, saving media). Use when the user wants to return results from nodes, display previews, or save output files.
+description: Use when configuring ComfyUI node outputs, UI previews, or saving output media.
 ---
 
 # ComfyUI Node Outputs

@@ -1,6 +1,6 @@
 ---
 name: comfyui-node-basics
-description: comfyui-node-basics: V3 API fundamentals, node schema, and registration. Use when the user wants to create a new ComfyUI custom node, define a node class, or set up a custom node project.
+description: Use when creating, defining, or registering a basic ComfyUI custom node using the V3 API.
 ---
 
 # ComfyUI Custom Node Basics (V3 API)

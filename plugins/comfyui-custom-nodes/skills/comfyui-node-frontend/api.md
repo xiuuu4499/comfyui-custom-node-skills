@@ -142,7 +142,8 @@ node.onDragDrop = function(event) { /* file dropped */ };
 
 ## Frontend Scripts API
 
-Custom node JavaScript can import from the frontend's `src/scripts/` modules. Imports use the Vite shim pattern:
+Custom node JavaScript can import from the frontend's `src/scripts/` modules. Imports use the Vite shim pattern. For a detailed reference of all importable modules, methods, properties, and WebSocket events, see [ComfyUI Frontend Scripts API Reference](api-reference.md).
+
 ```javascript
 import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";

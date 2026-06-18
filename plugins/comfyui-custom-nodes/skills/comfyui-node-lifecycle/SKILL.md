@@ -1,6 +1,6 @@
 ---
 name: comfyui-node-lifecycle
-description: comfyui-node-lifecycle: execution lifecycle (caching, fingerprinting, validate_inputs). Use when the user wants to debug execution, implement caching, validate inputs, or understand execution flow.
+description: Use when debugging ComfyUI execution flow, caching (fingerprint_inputs), or input validation.
 ---
 
 # ComfyUI Node Execution Lifecycle

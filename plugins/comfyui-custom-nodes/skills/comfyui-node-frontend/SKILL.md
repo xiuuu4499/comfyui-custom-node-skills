@@ -1,6 +1,6 @@
 ---
 name: comfyui-node-frontend
-description: comfyui-node-frontend: JavaScript frontend extensions (hooks, widgets, settings, commands). Use when the user wants to extend the ComfyUI frontend UI, add custom widgets, or write JavaScript hooks.
+description: Use when extending the ComfyUI JavaScript frontend with hooks, widgets, settings, or custom menus.
 ---
 
 # ComfyUI Frontend Extensions
