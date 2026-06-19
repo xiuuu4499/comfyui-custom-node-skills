@@ -87,6 +87,21 @@ def test_node_registered(api_client):
     assert api_client.node_exists("MyNode_UniqueID")
 ```
 
+## Test Coverage Configuration
+
+Bundled third-party libraries (e.g., model code or subpackages) can heavily pollute coverage results. Configure exclusions using globstar (`**/`) rules to recursively match directories:
+
+1. **Local config**: Because `run_tests.py` isolates context by changing directory to `tests/`, place a `.coveragerc` file inside `tests/` so `pytest-cov` automatically picks it up during execution.
+2. **Globstar syntax**: Slashes are required to match directory paths instead of filenames. Use double asterisks (`**/`) to match multi-level folders regardless of relative or absolute path variations.
+
+```ini
+# tests/.coveragerc
+[run]
+omit =
+    **/voicefixer_bundled/**
+    **/tests/**
+```
+
 ## Diagnostics
 
 | Symptom | Cause | Fix |
@@ -99,9 +114,12 @@ def test_node_registered(api_client):
 | `Integration tests hang / timeout` | Subprocess stdout buffer filled up (`subprocess.PIPE` without consumption) | Redirect subprocess output to a file (e.g. `tests/comfyui_server.log`) or `DEVNULL` |
 | `Nodes not registered in server subprocess` | Subprocess inherits testing-bypass environment flags (`COMFYUI_TESTING=1`) | Strip test-specific environment flags from the environment dict passed to the subprocess |
 | `Manual scripts pollute pytest run / crash` | Helper/debug scripts match `test_*.py` and are scanned by pytest | Relocate helper scripts to `tests/diagnostics/` or rename them to not match the `test_` prefix |
+| `Coverage report includes 3rd-party code / massive statement counts` | `pytest-cov` performs source discovery and includes all subfolders in the target | Add a `tests/.coveragerc` or `pyproject.toml` containing globstar omit patterns |
+| `Omit patterns in coveragerc are ignored` | Patterns lack slashes (matching basename only) or use `*` which does not cross folders | Use double asterisks `**/folder_name/**` (globstar) for multi-level recursive matching |
 
 ## See Also
 
 - `comfyui-node-packaging` – Project structure and entry points
 - `comfyui-node-lifecycle` – Execution flow (useful for integration test design)
 - `comfyui-node-basics` – Node class structure
+
