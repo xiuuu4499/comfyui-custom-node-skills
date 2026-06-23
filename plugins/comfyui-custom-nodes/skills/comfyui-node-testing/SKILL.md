@@ -1,90 +1,73 @@
 ---
 name: comfyui-node-testing
-description: Use when writing, running, or debugging tests for ComfyUI custom nodes — pytest isolation, conftest mocking, or test runner issues.
+description: Use when the user wants to write, run, or debug tests for ComfyUI custom nodes — isolation via conftest mocking, wrapper execution, or workflow format conversion.
 ---
 
 # Testing ComfyUI Custom Nodes
 
-ComfyUI nodes import server-side modules (`folder_paths`, `server`, `comfy_api`) at module load. Those imports fail outside a running ComfyUI process. The entire testing strategy revolves around **isolation** — intercepting those imports before pytest collects files — and a **wrapper** script that sets the correct execution context.
+ComfyUI nodes import server-side modules (`folder_paths`, `server`, `comfy_api`) at module load. Those imports fail outside a running ComfyUI process. The entire testing strategy revolves around **isolation** — intercepting those imports before pytest collects files.
+
+## Core Principle: Isolation
+
+**Isolation** means ComfyUI-internal imports never reach the real server. Two mechanisms:
+
+1. **conftest.py** — mocks modules at collection time
+2. **run_tests.py wrapper** — isolates venv, cwd, and server lifecycle
 
 ## Test Directory Structure
 
 ```
 tests/
-├── env_config.py     # Shared environment loading and path resolution
-├── conftest.py       # Module-level mocking — loads before collection
-├── pytest.ini        # Overrides parent-scope pytest config
-├── run_tests.py      # Wrapper: venv, cwd isolation, server lifecycle
-├── fixtures/         # Workflow JSON fixtures and sample data
-│   └── workflows/    # API-format workflow fixtures for E2E tests
-├── unit/             # Fast, isolated tests (< 1s each)
-└── integration/      # Heavy tests (node registration, server, FFmpeg, etc.)
+├── env_config.py     # Path resolution and .env loading
+├── conftest.py       # Module mocking before collection
+├── pytest.ini        # Test discovery config
+├── run_tests.py      # Wrapper: venv, cwd, server
+├── fixtures/
+│   └── workflows/    # API or GUI format workflow JSON
+├── unit/             # Fast tests (< 1s, no server)
+└── integration/      # Heavy tests (server, registration, binaries)
 ```
 
-Template files for config files: [references/](references/).
+Template files: [references/](references/).
 
-## Prerequisites
-
-Tests must run in an environment containing ComfyUI packages and test dependencies. Install them in the main ComfyUI virtual environment:
+## Setup
 
 ```bash
-# Activate the ComfyUI virtual environment and install testing dependencies
+# In the ComfyUI virtual environment:
 pip install pytest pytest-cov
 ```
 
-(Note: If a project-local `.venv` exists at the custom node root but lacks `pytest`, the test runner automatically bypasses it in favor of the ComfyUI venv.)
+## Local Path Overrides
 
-## Path Configuration & Local Overrides
-
-By default, the testing environment attempts to locate ComfyUI and its virtual environment automatically using standard layout fallbacks relative to the custom node folder. For custom layouts or standalone environments, developers can define local overrides without modifying tracked files:
-
-1. Create a `tests/.env` or `tests/.env.local` file.
-2. Add your environment path variables:
+For non-standard ComfyUI layouts, create `tests/.env.local` (gitignored):
 
 ```env
-# Root directory of ComfyUI
 COMFYUI_TEST_COMFY_ROOT=/path/to/ComfyUI
-
-# Path to the virtual environment python executable
 COMFYUI_TEST_VENV_PYTHON=/path/to/ComfyUI/venv/bin/python
-
-# Force CPU mode even when CUDA is available (useful for CI)
 COMFYUI_TEST_FORCE_CPU=1
 ```
 
-These files are ignored by git, allowing developers to maintain custom configurations across different development machines.
+## Execution
 
-## Execution: The Wrapper
-
-> **Never call `pytest` directly from the package root.** The wrapper activates the ComfyUI venv via `env_config.py`, isolates `cwd` to `tests/`, and auto-starts a server for integration runs.
+> **Never call `pytest` directly.** Use the wrapper for venv activation, cwd isolation, and server management.
 
 ```bash
-# From the custom node directory:
 cd custom_nodes/<NODE_PACKAGE_NAME>
-
-# All tests (auto-starts server if needed)
-python tests/run_tests.py --all
-
-# Unit tests only — no server, no heavy dependencies
-python tests/run_tests.py unit/
-
-# Integration tests only
-python tests/run_tests.py integration/
+python tests/run_tests.py --all       # all tests
+python tests/run_tests.py unit/       # unit only
+python tests/run_tests.py integration/ # integration only
 ```
 
-The wrapper auto-detects the platform and resolves the venv binary (`venv/Scripts/python` on Windows, `venv/bin/python` on Linux/macOS). See [run_tests.py](references/run_tests.py) for the runner template and [env_config.py](references/env_config.py) for path resolution.
-
-> [!IMPORTANT]
-> **Robust Virtualenv Verification**: A project-local `.venv` (created for editor/linting support) might exist at the custom node root but lack testing dependencies. A naive check for `.venv` existence will select it and crash. To prevent this, the wrapper's auto-detection logic executes a fast subprocess check to verify `pytest` is importable inside candidate virtual environments before routing execution. If a local environment lacks `pytest`, it is bypassed in favor of ComfyUI's main virtual environment.
+The wrapper verifies candidate virtualenvs have `pytest` before selection — a local `.venv` without test dependencies is bypassed for ComfyUI's main venv.
 
 ## Isolation via conftest.py
 
-`conftest.py` sits at the `tests/` root and runs before pytest scans any test file. It intercepts ComfyUI-internal imports via `sys.modules`:
+`conftest.py` runs before pytest collects any test file. It intercepts imports via `sys.modules`.
 
-**Two kinds of mock are needed:**
+**Two mock types:**
 
-1. **Simple MagicMock** — for modules used only for side effects (`folder_paths`, `server`, `comfy.model_management`).
-2. **Structural mock** — when node code inherits from a module attribute. `comfy_api.latest.io.ComfyNode` must be a real `type()`, not a MagicMock, or `class MyNode(io.ComfyNode)` crashes.
+1. **Simple MagicMock** — modules used for side effects only (`folder_paths`, `server`, `comfy.model_management`).
+2. **Structural mock** — when node code inherits from a module attribute. `comfy_api.latest.io.ComfyNode` must be a real `type()`, not a MagicMock.
 
 ```python
 # Structural mock — io.ComfyNode must be inheritable
@@ -95,17 +78,15 @@ sys.modules["comfy_api"] = mock_api
 sys.modules["comfy_api.latest"] = mock_api.latest
 ```
 
-Add entries as new `ModuleNotFoundError` messages surface — the traceback names the exact module to mock. See [conftest.py](references/conftest.py) for a complete template with typed inputs, marker registration, and the integration API client.
+**Completion criterion:** Every `ModuleNotFoundError` from test collection is resolved by adding the named module to `conftest.py`.
 
-### pytest.ini
-
-A [pytest.ini](references/pytest.ini) inside `tests/` overrides any parent-scope config. ComfyUI's root often carries a `pytest.ini` that conflicts with custom node test discovery.
+See [conftest.py](references/conftest.py) for the full template.
 
 ## Unit vs Integration Tests
 
 ### Unit (`@pytest.mark.unit`)
 
-Validate calculations, utility functions, and internal logic **without touching ComfyUI**. Keep testable logic in isolated modules (`utils/`, `backend/`) separated from node definitions to avoid accidentally pulling in server imports.
+Validate calculations and utility functions **without ComfyUI imports**. Keep testable logic in isolated modules (`utils/`, `backend/`).
 
 ```python
 @pytest.mark.unit
@@ -116,7 +97,7 @@ def test_normalize_scores():
 
 ### Integration (`@pytest.mark.integration`)
 
-Verify node registration, pipeline outputs, API endpoints, or external binaries. The wrapper auto-starts a server; the `api_client` fixture (session-scoped, lazy-imported) skips the suite if the server is unreachable.
+Verify node registration, pipeline outputs, API endpoints, or external binaries. The wrapper auto-starts a server; the `api_client` fixture skips if unreachable.
 
 ```python
 @pytest.mark.integration
@@ -126,19 +107,18 @@ def test_node_registered(api_client):
 
 ## Workflow Formats & E2E Execution
 
-ComfyUI uses two JSON formats for workflows:
+ComfyUI uses two JSON formats:
 
-- **GUI format** — exported by the browser UI via "Save". Contains `nodes` (array of dicts with `id`, `type`, `pos`, `widgets_values`) and `links` (array of connection tuples). **Not executable via the `/prompt` API.**
-- **API format** — exported via "Save (API Format)" or Dev Mode enabled + "Save (API Format)". A flat dictionary `{nodeId: {class_type, inputs}}` where inputs reference other nodes as `[source_node_id, output_index]` tuples. **This is what `/prompt` accepts.**
+- **GUI format** — has `nodes` (array) and `links`. Not executable via `/prompt`.
+- **API format** — flat dict `{nodeId: {class_type, inputs}}`. Executable.
 
 ### Auto-conversion
 
-The reference `ComfyUIApiClient` in [conftest.py](references/conftest.py) detects GUI-format workflows and converts them automatically using the server's `/object_info` endpoint to resolve widget input ordering. This means test code and agents can load either format:
+`ComfyUIApiClient.execute_workflow()` detects GUI format and converts via `/object_info`. Test code can load either format transparently:
 
 ```python
 @pytest.mark.integration
 def test_workflow_e2e(api_client, workflow_fixtures_path):
-    """Execute a workflow and verify completion — works with GUI or API format."""
     workflow_path = workflow_fixtures_path / "my_workflow.json"
     with open(workflow_path) as f:
         workflow = json.load(f)
@@ -148,29 +128,23 @@ def test_workflow_e2e(api_client, workflow_fixtures_path):
 
 ### Output node requirement
 
-ComfyUI refuses to execute workflows that lack at least one node with `OUTPUT_NODE = True`. The API client auto-injects a `PreviewAny` node on the deepest leaf if no output node exists. If `PreviewAny` is not installed on the server, injection is skipped and the server will return a `prompt_no_outputs` error naturally.
+Workflows need at least one node with `OUTPUT_NODE = True`. The client auto-injects `PreviewAny` on the deepest leaf if missing. If `PreviewAny` is not installed, the server returns `prompt_no_outputs`.
 
-### Workflow fixtures
-
-Store workflow fixtures in `tests/fixtures/workflows/`. Prefer API format for checked-in fixtures (smaller, deterministic). When the user provides a GUI-format export, the auto-conversion handles it transparently.
+Store fixtures in `tests/fixtures/workflows/`. Prefer API format (smaller, deterministic).
 
 ## GPU & Device Routing
 
-When the test runner spawns its own ComfyUI server (no server already running), it probes CUDA availability via the venv python and launches accordingly:
+The wrapper probes CUDA via the venv python and launches accordingly:
 
-- **CUDA available**: Server starts on GPU (default — no `--cpu` flag).
-- **No CUDA**: Server starts with `--cpu` automatically.
-- **Force CPU**: Set `COMFYUI_TEST_FORCE_CPU=1` in `.env.local` for CI or headless machines.
+- **CUDA available** — server runs on GPU (default).
+- **No CUDA** — server runs with `--cpu`.
+- **Force CPU** — set `COMFYUI_TEST_FORCE_CPU=1` for CI.
 
-> [!IMPORTANT]
-> **Prefer a running server.** If ComfyUI is already running (e.g., the developer's GPU instance on port 8188), the test harness reuses it — no subprocess is spawned and no device probe runs. Before running E2E integration tests with large models, verify a GPU server is running: `curl http://127.0.0.1:8188/system_stats`. Never hardcode `--cpu` in the server launch arguments.
+> **Prefer a running server.** If ComfyUI is already running on port 8188, the harness reuses it — no subprocess spawned.
 
-## Test Coverage Configuration
+## Test Coverage
 
-Bundled third-party libraries (e.g., model code or subpackages) can heavily pollute coverage results. Configure exclusions using globstar (`**/`) rules to recursively match directories:
-
-1. **Local config**: Because `run_tests.py` isolates context by changing directory to `tests/`, place a `.coveragerc` file inside `tests/` so `pytest-cov` automatically picks it up during execution.
-2. **Globstar syntax**: Slashes are required to match directory paths instead of filenames. Use double asterisks (`**/`) to match multi-level folders regardless of relative or absolute path variations.
+Place `.coveragerc` in `tests/` (the wrapper changes cwd there). Use globstar patterns for recursive excludes:
 
 ```ini
 # tests/.coveragerc
@@ -184,22 +158,16 @@ omit =
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| `ModuleNotFoundError: folder_paths` | Node imports ComfyUI internals at load | Add the module to `conftest.py` mock list |
-| `No tests found` | Parent `pytest.ini` overrides test discovery | Ensure `tests/pytest.ini` exists with `testpaths = .` |
-| `ImportError: attempted relative import` | `pytest` run directly from package root | Use `run_tests.py` wrapper — it sets the correct `sys.path` |
-| `TypeError` on `class MyNode(io.ComfyNode)` | `io.ComfyNode` mocked as MagicMock, not a real type | Use `type("ComfyNode", (object,), {})` in conftest structural mock |
-| `AttributeError` on mocked module | Test calls a method the MagicMock doesn't spec | Add the attribute to the mock or use a targeted fixture |
-| `Integration tests hang / timeout` | Subprocess stdout buffer filled up (`subprocess.PIPE` without consumption) | Redirect subprocess output to a file (e.g. `tests/comfyui_server.log`) or `DEVNULL` |
-| `Nodes not registered in server subprocess` | Subprocess inherits testing-bypass environment flags (`COMFYUI_TESTING=1`) | Strip test-specific environment flags from the environment dict passed to the subprocess |
-| `Manual scripts pollute pytest run / crash` | Helper/debug scripts match `test_*.py` and are scanned by pytest | Relocate helper scripts to `tests/diagnostics/`, rename them to not match the `test_` prefix, or restrict `python_files` in `tests/pytest.ini` to specific subdirectories (e.g., `unit/test_*.py` and `integration/test_*.py`) |
-| `400 prompt_no_outputs` on workflow execution | Workflow has no node with `OUTPUT_NODE = True` | Use `execute_workflow()` (auto-injects `PreviewAny`), or manually add an output node to the workflow fixture |
-| `Workflow queue returns 400 / validation error` | Workflow is in GUI format (has `nodes`/`links` arrays) | Use `execute_workflow()` (auto-converts), or re-export from ComfyUI with Dev Mode → "Save (API Format)" |
-| `E2E tests extremely slow / timeout` | Server launched with `--cpu` for large models | Remove `--cpu`; ensure CUDA is available or pre-start a GPU server on port 8188 |
-| `Coverage report includes 3rd-party code / massive statement counts` | `pytest-cov` performs source discovery and includes all subfolders in the target | Add a `tests/.coveragerc` or `pyproject.toml` containing globstar omit patterns |
-| `Omit patterns in coveragerc are ignored` | Patterns lack slashes (matching basename only) or use `*` which does not cross folders | Use double asterisks `**/folder_name/**` (globstar) for multi-level recursive matching |
+| `ModuleNotFoundError: folder_paths` | Missing conftest mock | Add module to `conftest.py` |
+| `TypeError` on `class MyNode(io.ComfyNode)` | `io.ComfyNode` is MagicMock, not a type | Use `type("ComfyNode", (object,), {})` |
+| `ImportError: relative import` | pytest run from package root | Use `run_tests.py` wrapper |
+| `Integration tests hang` | Subprocess stdout buffer full | Redirect server output to file or `DEVNULL` |
+| `400 prompt_no_outputs` | No `OUTPUT_NODE = True` | Use `execute_workflow()` (auto-injects) |
+| `Workflow validation error` | GUI format sent to `/prompt` | Use `execute_workflow()` (auto-converts) |
+| `Coverage includes 3rd-party` | Missing omit patterns | Add `**/folder/**` to `.coveragerc` |
 
 ## See Also
 
 - `comfyui-node-packaging` – Project structure and entry points
-- `comfyui-node-lifecycle` – Execution flow (useful for integration test design)
+- `comfyui-node-lifecycle` – Execution flow
 - `comfyui-node-basics` – Node class structure
