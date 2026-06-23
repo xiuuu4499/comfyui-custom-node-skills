@@ -26,17 +26,19 @@ os.environ["COMFYUI_TESTING"] = "1"
 # Path routing
 # ---------------------------------------------------------------------------
 
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-# Works whether invoked from repo root or inside tests/
-TESTS_DIR = SCRIPT_DIR if SCRIPT_DIR.endswith("tests") else os.path.join(SCRIPT_DIR, "tests")
-COMFYUI_ROOT = os.path.abspath(os.path.join(TESTS_DIR, "..", ".."))
-COMFYUI_MAIN = os.path.join(COMFYUI_ROOT, "main.py")
+# Import shared configuration
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+try:
+    import env_config
+except ImportError:
+    # Handle direct/nested invocation if sys.path isn't resolved
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "tests"))
+    import env_config
 
-# Cross-platform venv resolution
-if os.name == "nt":
-    PYTHON_EXE = os.path.join(COMFYUI_ROOT, "venv", "Scripts", "python.exe")
-else:
-    PYTHON_EXE = os.path.join(COMFYUI_ROOT, "venv", "bin", "python")
+TESTS_DIR = env_config.TESTS_DIR
+COMFYUI_ROOT = env_config.COMFYUI_ROOT
+PYTHON_EXE = env_config.VENV_PYTHON
+COMFYUI_MAIN = os.path.join(COMFYUI_ROOT, "main.py")
 
 _server_process = None
 _server_log = None
@@ -63,10 +65,10 @@ def start_comfyui_server():
     """Background a managed ComfyUI instance for integration tests."""
     global _server_process, _server_log
     if is_server_running():
-        print("✓ ComfyUI server already running on port 8188")
+        print("[INFO] ComfyUI server already running on port 8188")
         return None
 
-    print("🚀 Starting ComfyUI server...")
+    print("[INFO] Starting ComfyUI server...")
     creation_flags = subprocess.CREATE_NEW_PROCESS_GROUP if sys.platform == "win32" else 0
     
     log_path = os.path.join(TESTS_DIR, "comfyui_server.log")
@@ -94,7 +96,7 @@ def start_comfyui_server():
         time.sleep(1)
         print(".", end="", flush=True)
 
-    print("\n✗ Server failed to start within 60 seconds")
+    print("\n[ERROR] Server failed to start within 60 seconds")
     stop_comfyui_server()
     sys.exit(1)
 
@@ -104,7 +106,7 @@ def stop_comfyui_server():
     global _server_process, _server_log
     if _server_process is None:
         return
-    print("\n🛑 Stopping ComfyUI server...")
+    print("\n[INFO] Stopping ComfyUI server...")
     if sys.platform == "win32":
         _server_process.terminate()
     else:
@@ -138,7 +140,7 @@ def main():
     # Filter out --all if present, as it is a runner-specific flag to run all tests
     # (which pytest does by default when no specific path/marker is given)
     pytest_args = [PYTHON_EXE, "-m", "pytest"] + [a for a in args if a != "--all"]
-    print(f"\n📋 Executing: {' '.join(pytest_args)}")
+    print(f"\n[TESTS] Executing: {' '.join(pytest_args)}")
 
     try:
         result = subprocess.run(pytest_args, env=os.environ)
@@ -149,3 +151,4 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
+

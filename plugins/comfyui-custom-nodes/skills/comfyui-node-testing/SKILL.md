@@ -11,6 +11,7 @@ ComfyUI nodes import server-side modules (`folder_paths`, `server`, `comfy_api`)
 
 ```
 tests/
+├── env_config.py     # Shared environment loading and path resolution
 ├── conftest.py       # Module-level mocking — loads before collection
 ├── pytest.ini        # Overrides parent-scope pytest config
 ├── run_tests.py      # Wrapper: venv, cwd isolation, server lifecycle
@@ -18,11 +19,28 @@ tests/
 └── integration/      # Heavy tests (node registration, server, FFmpeg, etc.)
 ```
 
-Template files for all three config files: [references/](references/).
+Template files for config files: [references/](references/).
+
+## Path Configuration & Local Overrides
+
+By default, the testing environment attempts to locate ComfyUI and its virtual environment automatically using standard layout fallbacks relative to the custom node folder. For custom layouts or standalone environments, developers can define local overrides without modifying tracked files:
+
+1. Create a `tests/.env` or `tests/.env.local` file.
+2. Add your environment path variables:
+
+```env
+# Root directory of ComfyUI
+COMFYUI_TEST_COMFY_ROOT=/path/to/ComfyUI
+
+# Path to the virtual environment python executable
+COMFYUI_TEST_VENV_PYTHON=/path/to/ComfyUI/venv/bin/python
+```
+
+These files are ignored by git, allowing developers to maintain custom configurations across different development machines.
 
 ## Execution: The Wrapper
 
-> **Never call `pytest` directly from the package root.** The wrapper activates the ComfyUI venv, isolates `cwd` to `tests/`, and auto-starts a server for integration runs.
+> **Never call `pytest` directly from the package root.** The wrapper activates the ComfyUI venv via `env_config.py`, isolates `cwd` to `tests/`, and auto-starts a server for integration runs.
 
 ```bash
 # From the custom node directory:
