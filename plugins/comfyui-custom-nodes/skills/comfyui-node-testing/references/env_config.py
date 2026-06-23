@@ -53,14 +53,39 @@ if not COMFYUI_ROOT:
 # 2. Resolve Virtual Environment Python Executable
 VENV_PYTHON = os.environ.get("COMFYUI_TEST_VENV_PYTHON")
 if not VENV_PYTHON:
+    # Compile a list of candidate venv paths to check (both ComfyUI-level and project-local)
+    candidates = []
     if os.name == "nt":
-        default_python = os.path.join(COMFYUI_ROOT, "venv", "Scripts", "python.exe")
+        candidates.append(os.path.join(COMFYUI_ROOT, "venv", "Scripts", "python.exe"))
+        candidates.append(os.path.join(TESTS_DIR, "..", ".venv", "Scripts", "python.exe"))
+        candidates.append(os.path.join(TESTS_DIR, "..", "venv", "Scripts", "python.exe"))
     else:
-        default_python = os.path.join(COMFYUI_ROOT, "venv", "bin", "python")
+        candidates.append(os.path.join(COMFYUI_ROOT, "venv", "bin", "python"))
+        candidates.append(os.path.join(TESTS_DIR, "..", ".venv", "bin", "python"))
+        candidates.append(os.path.join(TESTS_DIR, "..", "venv", "bin", "python"))
     
-    if os.path.isfile(default_python):
-        VENV_PYTHON = default_python
+    # Filter candidates: path must exist and pytest must be importable
+    import subprocess
+    resolved = None
+    for path in candidates:
+        if os.path.isfile(path):
+            try:
+                # Fast check to ensure pytest is importable inside the venv
+                res = subprocess.run(
+                    [path, "-c", "import pytest"],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    timeout=3
+                )
+                if res.returncode == 0:
+                    resolved = path
+                    break
+            except Exception:
+                continue
+                
+    if resolved:
+        VENV_PYTHON = resolved
     else:
-        # Fallback to sys.executable if venv is missing but root was found (e.g. non-venv system python)
+        # Fallback to sys.executable if no valid venv with pytest is found
         VENV_PYTHON = sys.executable
     os.environ["COMFYUI_TEST_VENV_PYTHON"] = VENV_PYTHON

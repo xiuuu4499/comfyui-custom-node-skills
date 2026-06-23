@@ -78,8 +78,32 @@ def start_comfyui_server():
     server_env.pop("COMFYUI_TESTING", None)
     server_env.pop("PYTEST_CURRENT_TEST", None)
 
+    # Determine device mode: GPU by default, CPU only if forced or no CUDA
+    comfy_args = [PYTHON_EXE, COMFYUI_MAIN, "--listen", "127.0.0.1", "--port", "8188"]
+
+    force_cpu = os.environ.get("COMFYUI_TEST_FORCE_CPU", "") == "1"
+    if force_cpu:
+        comfy_args.append("--cpu")
+        print("[INFO] Device: CPU (COMFYUI_TEST_FORCE_CPU=1)")
+    else:
+        # Probe CUDA via the venv python (system python may lack torch)
+        try:
+            probe = subprocess.run(
+                [PYTHON_EXE, "-c", "import torch; print(torch.cuda.is_available())"],
+                capture_output=True, text=True, timeout=15,
+            )
+            has_cuda = probe.stdout.strip() == "True"
+        except Exception:
+            has_cuda = False
+
+        if has_cuda:
+            print("[INFO] Device: GPU (CUDA available)")
+        else:
+            comfy_args.append("--cpu")
+            print("[INFO] Device: CPU (no CUDA detected)")
+
     _server_process = subprocess.Popen(
-        [PYTHON_EXE, COMFYUI_MAIN, "--listen", "127.0.0.1", "--port", "8188"],
+        comfy_args,
         cwd=COMFYUI_ROOT,
         stdout=_server_log,
         stderr=subprocess.STDOUT,

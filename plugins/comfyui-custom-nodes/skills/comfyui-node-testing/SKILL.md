@@ -15,11 +15,24 @@ tests/
 ├── conftest.py       # Module-level mocking — loads before collection
 ├── pytest.ini        # Overrides parent-scope pytest config
 ├── run_tests.py      # Wrapper: venv, cwd isolation, server lifecycle
+├── fixtures/         # Workflow JSON fixtures and sample data
+│   └── workflows/    # API-format workflow fixtures for E2E tests
 ├── unit/             # Fast, isolated tests (< 1s each)
 └── integration/      # Heavy tests (node registration, server, FFmpeg, etc.)
 ```
 
 Template files for config files: [references/](references/).
+
+## Prerequisites
+
+Tests must run in an environment containing ComfyUI packages and test dependencies. Install them in the main ComfyUI virtual environment:
+
+```bash
+# Activate the ComfyUI virtual environment and install testing dependencies
+pip install pytest pytest-cov
+```
+
+(Note: If a project-local `.venv` exists at the custom node root but lacks `pytest`, the test runner automatically bypasses it in favor of the ComfyUI venv.)
 
 ## Path Configuration & Local Overrides
 
@@ -34,6 +47,9 @@ COMFYUI_TEST_COMFY_ROOT=/path/to/ComfyUI
 
 # Path to the virtual environment python executable
 COMFYUI_TEST_VENV_PYTHON=/path/to/ComfyUI/venv/bin/python
+
+# Force CPU mode even when CUDA is available (useful for CI)
+COMFYUI_TEST_FORCE_CPU=1
 ```
 
 These files are ignored by git, allowing developers to maintain custom configurations across different development machines.
@@ -56,7 +72,10 @@ python tests/run_tests.py unit/
 python tests/run_tests.py integration/
 ```
 
-The wrapper auto-detects the platform and resolves the venv binary (`venv/Scripts/python` on Windows, `venv/bin/python` on Linux/macOS). See [run_tests.py](references/run_tests.py) for the full template.
+The wrapper auto-detects the platform and resolves the venv binary (`venv/Scripts/python` on Windows, `venv/bin/python` on Linux/macOS). See [run_tests.py](references/run_tests.py) for the runner template and [env_config.py](references/env_config.py) for path resolution.
+
+> [!IMPORTANT]
+> **Robust Virtualenv Verification**: A project-local `.venv` (created for editor/linting support) might exist at the custom node root but lack testing dependencies. A naive check for `.venv` existence will select it and crash. To prevent this, the wrapper's auto-detection logic executes a fast subprocess check to verify `pytest` is importable inside candidate virtual environments before routing execution. If a local environment lacks `pytest`, it is bypassed in favor of ComfyUI's main virtual environment.
 
 ## Isolation via conftest.py
 
@@ -105,6 +124,47 @@ def test_node_registered(api_client):
     assert api_client.node_exists("MyNode_UniqueID")
 ```
 
+## Workflow Formats & E2E Execution
+
+ComfyUI uses two JSON formats for workflows:
+
+- **GUI format** — exported by the browser UI via "Save". Contains `nodes` (array of dicts with `id`, `type`, `pos`, `widgets_values`) and `links` (array of connection tuples). **Not executable via the `/prompt` API.**
+- **API format** — exported via "Save (API Format)" or Dev Mode enabled + "Save (API Format)". A flat dictionary `{nodeId: {class_type, inputs}}` where inputs reference other nodes as `[source_node_id, output_index]` tuples. **This is what `/prompt` accepts.**
+
+### Auto-conversion
+
+The reference `ComfyUIApiClient` in [conftest.py](references/conftest.py) detects GUI-format workflows and converts them automatically using the server's `/object_info` endpoint to resolve widget input ordering. This means test code and agents can load either format:
+
+```python
+@pytest.mark.integration
+def test_workflow_e2e(api_client, workflow_fixtures_path):
+    """Execute a workflow and verify completion — works with GUI or API format."""
+    workflow_path = workflow_fixtures_path / "my_workflow.json"
+    with open(workflow_path) as f:
+        workflow = json.load(f)
+    result = api_client.execute_workflow(workflow, timeout=300)
+    assert result is not None
+```
+
+### Output node requirement
+
+ComfyUI refuses to execute workflows that lack at least one node with `OUTPUT_NODE = True`. The API client auto-injects a `PreviewAny` node on the deepest leaf if no output node exists. If `PreviewAny` is not installed on the server, injection is skipped and the server will return a `prompt_no_outputs` error naturally.
+
+### Workflow fixtures
+
+Store workflow fixtures in `tests/fixtures/workflows/`. Prefer API format for checked-in fixtures (smaller, deterministic). When the user provides a GUI-format export, the auto-conversion handles it transparently.
+
+## GPU & Device Routing
+
+When the test runner spawns its own ComfyUI server (no server already running), it probes CUDA availability via the venv python and launches accordingly:
+
+- **CUDA available**: Server starts on GPU (default — no `--cpu` flag).
+- **No CUDA**: Server starts with `--cpu` automatically.
+- **Force CPU**: Set `COMFYUI_TEST_FORCE_CPU=1` in `.env.local` for CI or headless machines.
+
+> [!IMPORTANT]
+> **Prefer a running server.** If ComfyUI is already running (e.g., the developer's GPU instance on port 8188), the test harness reuses it — no subprocess is spawned and no device probe runs. Before running E2E integration tests with large models, verify a GPU server is running: `curl http://127.0.0.1:8188/system_stats`. Never hardcode `--cpu` in the server launch arguments.
+
 ## Test Coverage Configuration
 
 Bundled third-party libraries (e.g., model code or subpackages) can heavily pollute coverage results. Configure exclusions using globstar (`**/`) rules to recursively match directories:
@@ -131,7 +191,10 @@ omit =
 | `AttributeError` on mocked module | Test calls a method the MagicMock doesn't spec | Add the attribute to the mock or use a targeted fixture |
 | `Integration tests hang / timeout` | Subprocess stdout buffer filled up (`subprocess.PIPE` without consumption) | Redirect subprocess output to a file (e.g. `tests/comfyui_server.log`) or `DEVNULL` |
 | `Nodes not registered in server subprocess` | Subprocess inherits testing-bypass environment flags (`COMFYUI_TESTING=1`) | Strip test-specific environment flags from the environment dict passed to the subprocess |
-| `Manual scripts pollute pytest run / crash` | Helper/debug scripts match `test_*.py` and are scanned by pytest | Relocate helper scripts to `tests/diagnostics/` or rename them to not match the `test_` prefix |
+| `Manual scripts pollute pytest run / crash` | Helper/debug scripts match `test_*.py` and are scanned by pytest | Relocate helper scripts to `tests/diagnostics/`, rename them to not match the `test_` prefix, or restrict `python_files` in `tests/pytest.ini` to specific subdirectories (e.g., `unit/test_*.py` and `integration/test_*.py`) |
+| `400 prompt_no_outputs` on workflow execution | Workflow has no node with `OUTPUT_NODE = True` | Use `execute_workflow()` (auto-injects `PreviewAny`), or manually add an output node to the workflow fixture |
+| `Workflow queue returns 400 / validation error` | Workflow is in GUI format (has `nodes`/`links` arrays) | Use `execute_workflow()` (auto-converts), or re-export from ComfyUI with Dev Mode → "Save (API Format)" |
+| `E2E tests extremely slow / timeout` | Server launched with `--cpu` for large models | Remove `--cpu`; ensure CUDA is available or pre-start a GPU server on port 8188 |
 | `Coverage report includes 3rd-party code / massive statement counts` | `pytest-cov` performs source discovery and includes all subfolders in the target | Add a `tests/.coveragerc` or `pyproject.toml` containing globstar omit patterns |
 | `Omit patterns in coveragerc are ignored` | Patterns lack slashes (matching basename only) or use `*` which does not cross folders | Use double asterisks `**/folder_name/**` (globstar) for multi-level recursive matching |
 
@@ -140,4 +203,3 @@ omit =
 - `comfyui-node-packaging` – Project structure and entry points
 - `comfyui-node-lifecycle` – Execution flow (useful for integration test design)
 - `comfyui-node-basics` – Node class structure
-
