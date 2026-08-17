@@ -12,8 +12,8 @@
       "description": "9 skills covering ComfyUI custom node development with the V3 and V1 APIs",
       "source": {
         "source": "github",
-        "repo": "jtydhr88/comfyui-custom-node-skills",
-        "ref": "master",
+        "repo": "xiuuu4499/comfyui-custom-node-skills",
+        "ref": "adjusted-fork-urls",
         "path": "plugins/comfyui-custom-nodes"
       },
       "skills": "skills"

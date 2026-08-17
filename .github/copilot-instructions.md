@@ -36,5 +36,5 @@ using the V3 and V1 Python APIs.
 
 - **Editing a `SKILL.md`**: verify accuracy against the ComfyUI source links in `README.md` before committing.
 - **Adding a new skill**: create a directory under `skills/`, add `SKILL.md`, and register it in all relevant plugin manifests and the `README.md` skill table.
-- **Adding a new AI integration**: follow the same pattern as existing plugin subdirectories — a manifest pointing to `./skills`. Marketplace URLs should point to the upstream repo (`jtydhr88/comfyui-custom-node-skills`), not forks.
+- **Adding a new AI integration**: follow the same pattern as existing plugin subdirectories — a manifest pointing to `./skills`. Marketplace URLs should point to this fork and branch (`xiuuu4499/comfyui-custom-node-skills#adjusted-fork-urls`), not the upstream repo.
 - Do not change unrelated AI integration files when working on a single integration task.

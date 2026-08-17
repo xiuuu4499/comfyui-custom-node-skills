@@ -32,7 +32,7 @@
 
 ```bash
 # 克隆仓库，然后将 Skills 复制到个人 skills 目录
-git clone https://github.com/jtydhr88/comfyui-custom-node-skills.git
+git clone -b adjusted-fork-urls https://github.com/xiuuu4499/comfyui-custom-node-skills.git
 cp -r comfyui-custom-node-skills/plugins/comfyui-custom-nodes/skills/comfyui-node-* ~/.claude/skills/
 ```
 
@@ -57,7 +57,7 @@ Skills 会在 Claude 检测到相关上下文时自动加载，也可以手动�
 
 ```bash
 # 将本仓库添加为 Codex marketplace 来源
-codex plugin marketplace add jtydhr88/comfyui-custom-node-skills
+codex plugin marketplace add xiuuu4499/comfyui-custom-node-skills#adjusted-fork-urls
 
 # 然后在 ChatGPT 桌面应用或 Codex CLI 中：
 # Plugins → 选择 "ComfyUI Custom Node Skills" → 安装
@@ -69,7 +69,7 @@ codex plugin marketplace add jtydhr88/comfyui-custom-node-skills
 
 ```bash
 # 克隆仓库，然后将 Skills 复制到个人 skills 目录
-git clone https://github.com/jtydhr88/comfyui-custom-node-skills.git
+git clone -b adjusted-fork-urls https://github.com/xiuuu4499/comfyui-custom-node-skills.git
 cp -r comfyui-custom-node-skills/plugins/comfyui-custom-nodes/skills/comfyui-node-* ~/.agents/skills/
 ```
 
@@ -95,7 +95,7 @@ cp -r comfyui-custom-node-skills/plugins/comfyui-custom-nodes/skills/comfyui-nod
 
 ```bash
 # 注册插件市场（只需一次）
-copilot plugin marketplace add jtydhr88/comfyui-custom-node-skills
+copilot plugin marketplace add xiuuu4499/comfyui-custom-node-skills#adjusted-fork-urls
 
 # 浏览并安装
 copilot plugin marketplace browse comfyui-custom-node-skills
@@ -105,7 +105,7 @@ copilot plugin install comfyui-custom-nodes@comfyui-custom-node-skills
 #### 直接安装（Copilot CLI）
 
 ```bash
-copilot plugin install jtydhr88/comfyui-custom-node-skills:plugins/comfyui-custom-nodes
+copilot plugin install xiuuu4499/comfyui-custom-node-skills#adjusted-fork-urls:plugins/comfyui-custom-nodes
 ```
 
 #### 验证

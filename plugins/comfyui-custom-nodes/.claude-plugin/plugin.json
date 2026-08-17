@@ -5,7 +5,7 @@
   "author": {
     "name": "Terry Jia"
   },
-  "homepage": "https://github.com/jtydhr88/comfyui-custom-node-skills",
+  "homepage": "https://github.com/xiuuu4499/comfyui-custom-node-skills/tree/adjusted-fork-urls",
   "license": "MIT",
   "keywords": [ "comfyui", "custom-nodes", "ai", "image-generation" ],
   "skills": "./skills"

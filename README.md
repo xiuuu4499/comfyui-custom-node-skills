@@ -32,7 +32,7 @@ In Claude Code, open the marketplace and add this repository URL. This installs 
 
 ```bash
 # Clone the repository, then copy the skills to your personal skills directory
-git clone https://github.com/jtydhr88/comfyui-custom-node-skills.git
+git clone -b adjusted-fork-urls https://github.com/xiuuu4499/comfyui-custom-node-skills.git
 cp -r comfyui-custom-node-skills/plugins/comfyui-custom-nodes/skills/comfyui-node-* ~/.claude/skills/
 ```
 
@@ -57,7 +57,7 @@ Skills are loaded automatically when Claude detects relevant context. You can al
 
 ```bash
 # Add this repository as a Codex marketplace source
-codex plugin marketplace add jtydhr88/comfyui-custom-node-skills
+codex plugin marketplace add xiuuu4499/comfyui-custom-node-skills#adjusted-fork-urls
 
 # Then, in the ChatGPT desktop app or Codex CLI:
 # Plugins → select "ComfyUI Custom Node Skills" → Install
@@ -69,7 +69,7 @@ The same 9 `SKILL.md` files are shipped through the plugin's `skills/` directory
 
 ```bash
 # Clone the repository, then copy the skills to your personal skills directory
-git clone https://github.com/jtydhr88/comfyui-custom-node-skills.git
+git clone -b adjusted-fork-urls https://github.com/xiuuu4499/comfyui-custom-node-skills.git
 cp -r comfyui-custom-node-skills/plugins/comfyui-custom-nodes/skills/comfyui-node-* ~/.agents/skills/
 ```
 
@@ -95,7 +95,7 @@ Skills are loaded automatically when working in this repository — no setup nee
 
 ```bash
 # Register the marketplace (once)
-copilot plugin marketplace add jtydhr88/comfyui-custom-node-skills
+copilot plugin marketplace add xiuuu4499/comfyui-custom-node-skills#adjusted-fork-urls
 
 # Browse and install
 copilot plugin marketplace browse comfyui-custom-node-skills
@@ -105,7 +105,7 @@ copilot plugin install comfyui-custom-nodes@comfyui-custom-node-skills
 #### Direct install (Copilot CLI)
 
 ```bash
-copilot plugin install jtydhr88/comfyui-custom-node-skills:plugins/comfyui-custom-nodes
+copilot plugin install xiuuu4499/comfyui-custom-node-skills#adjusted-fork-urls:plugins/comfyui-custom-nodes
 ```
 
 #### Verify
